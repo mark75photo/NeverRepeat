@@ -23,6 +23,18 @@ jobs:
           cp manifest.json www/manifest.json
       - run: npx cap add android
       - run: npx cap sync android
+      - name: Apply NeveRRepeat launcher branding
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq librsvg2-bin
+          for spec in "mipmap-mdpi 48" "mipmap-hdpi 72" "mipmap-xhdpi 96" "mipmap-xxhdpi 144" "mipmap-xxxhdpi 192"; do
+            set -- $spec
+            dir="android/app/src/main/res/$1"
+            mkdir -p "$dir"
+            rsvg-convert -w "$2" -h "$2" brand/rr-icon.svg -o "$dir/ic_launcher.png"
+            cp "$dir/ic_launcher.png" "$dir/ic_launcher_round.png"
+            cp "$dir/ic_launcher.png" "$dir/ic_launcher_foreground.png" || true
+          done
       - name: Add Spotify callback deep link
         run: |
           python3 - <<'PY'
