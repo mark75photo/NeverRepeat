@@ -1,1 +1,1 @@
-NeveRRepeat permanent signing foundation build
+NeveRRepeat update build: genre-run scheduler + simplified controls
