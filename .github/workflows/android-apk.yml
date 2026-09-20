@@ -48,15 +48,24 @@ jobs:
           PY
       - name: Build release APK
         run: cd android && ./gradlew assembleRelease
-      - name: Sign NeverRepeat release APK
+      - name: Restore permanent NeveRRepeat signing key
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
         run: |
-          mkdir -p "$HOME/.android"
-          keytool -genkeypair -v -keystore "$HOME/.android/debug.keystore" -storepass android -keypass android -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          test -n "$ANDROID_KEYSTORE_BASE64" || { echo "Missing ANDROID_KEYSTORE_BASE64"; exit 1; }
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/neverrepeat-release.jks"
+      - name: Sign NeveRRepeat release APK
+        env:
+          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          test -n "$KS_PASS" && test -n "$KEY_PASS" && test -n "$KEY_ALIAS" || { echo "Missing Android signing secret"; exit 1; }
           BUILD_TOOLS=$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)
-          "$ANDROID_HOME/build-tools/$BUILD_TOOLS/zipalign" -f 4 android/app/build/outputs/apk/release/app-release-unsigned.apk "$RUNNER_TEMP/NeverRepeat-aligned.apk"
-          "$ANDROID_HOME/build-tools/$BUILD_TOOLS/apksigner" sign --ks "$HOME/.android/debug.keystore" --ks-pass pass:android --key-pass pass:android --ks-key-alias androiddebugkey --out NeverRepeat.apk "$RUNNER_TEMP/NeverRepeat-aligned.apk"
-          "$ANDROID_HOME/build-tools/$BUILD_TOOLS/apksigner" verify --verbose --print-certs NeverRepeat.apk
+          "$ANDROID_HOME/build-tools/$BUILD_TOOLS/zipalign" -f 4 android/app/build/outputs/apk/release/app-release-unsigned.apk "$RUNNER_TEMP/NeveRRepeat-aligned.apk"
+          "$ANDROID_HOME/build-tools/$BUILD_TOOLS/apksigner" sign --ks "$RUNNER_TEMP/neverrepeat-release.jks" --ks-pass env:KS_PASS --key-pass env:KEY_PASS --ks-key-alias "$KEY_ALIAS" --out NeveRRepeat.apk "$RUNNER_TEMP/NeveRRepeat-aligned.apk"
+          "$ANDROID_HOME/build-tools/$BUILD_TOOLS/apksigner" verify --verbose --print-certs NeveRRepeat.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: NeverRepeat-release-apk
-          path: NeverRepeat.apk
+          name: NeveRRepeat-release-apk
+          path: NeveRRepeat.apk
