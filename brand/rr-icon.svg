@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<rect width="512" height="512" rx="112" fill="#090b0c"/>
+<circle cx="256" cy="256" r="158" fill="none" stroke="#1ed760" stroke-width="34" stroke-dasharray="360 90" stroke-linecap="round"/>
+<path d="M365 100l55 8-27 49zM147 412l-55-8 27-49z" fill="#1ed760"/>
+<text x="256" y="300" text-anchor="middle" font-family="Arial,sans-serif" font-size="142" font-weight="900" font-style="italic" fill="#1ed760">RR</text>
+</svg>
