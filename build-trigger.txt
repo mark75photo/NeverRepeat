@@ -1,1 +1,1 @@
-NeveRRepeat update build: genre-run scheduler + simplified controls
+NeveRRepeat update build: metadata-driven genres + genre-run scheduler
