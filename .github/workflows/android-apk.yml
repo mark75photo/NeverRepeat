@@ -38,11 +38,9 @@ jobs:
         run: cd android && ./gradlew assembleRelease
       - name: Sign NeverRepeat release APK
         run: |
-          KEYSTORE="$RUNNER_TEMP/neverrepeat-release.jks"
-          keytool -genkeypair -v -keystore "$KEYSTORE" -storepass neverrepeat -keypass neverrepeat -alias neverrepeat -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=NeverRepeat, OU=Android, O=Mark Hansen, L=Stony Plain, ST=Alberta, C=CA"
           BUILD_TOOLS=$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)
           "$ANDROID_HOME/build-tools/$BUILD_TOOLS/zipalign" -f 4 android/app/build/outputs/apk/release/app-release-unsigned.apk "$RUNNER_TEMP/NeverRepeat-aligned.apk"
-          "$ANDROID_HOME/build-tools/$BUILD_TOOLS/apksigner" sign --ks "$KEYSTORE" --ks-pass pass:neverrepeat --key-pass pass:neverrepeat --ks-key-alias neverrepeat --out NeverRepeat.apk "$RUNNER_TEMP/NeverRepeat-aligned.apk"
+          "$ANDROID_HOME/build-tools/$BUILD_TOOLS/apksigner" sign --ks "$HOME/.android/debug.keystore" --ks-pass pass:android --key-pass pass:android --ks-key-alias androiddebugkey --out NeverRepeat.apk "$RUNNER_TEMP/NeverRepeat-aligned.apk"
           "$ANDROID_HOME/build-tools/$BUILD_TOOLS/apksigner" verify --verbose --print-certs NeverRepeat.apk
       - uses: actions/upload-artifact@v4
         with:
