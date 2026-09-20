@@ -25,6 +25,17 @@ jobs:
       - run: npx cap sync android
       - name: Build debug APK
         run: cd android && ./gradlew assembleDebug
+      - name: Add Spotify callback deep link
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("android/app/src/main/AndroidManifest.xml")
+          s=p.read_text()
+          needle='''<intent-filter>\n                <action android:name="android.intent.action.MAIN" />'''
+          deep='''<intent-filter>\n                <action android:name="android.intent.action.VIEW" />\n                <category android:name="android.intent.category.DEFAULT" />\n                <category android:name="android.intent.category.BROWSABLE" />\n                <data android:scheme="neverrepeat" android:host="callback" />\n            </intent-filter>\n\n            <intent-filter>\n                <action android:name="android.intent.action.MAIN" />'''
+          if needle not in s: raise SystemExit("MainActivity intent filter not found")
+          p.write_text(s.replace(needle,deep,1))
+          PY
       - name: Rename APK for phone install
         run: cp android/app/build/outputs/apk/debug/app-debug.apk NeverRepeat.apk
       - uses: actions/upload-artifact@v4
