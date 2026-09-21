@@ -46,6 +46,27 @@ jobs:
           if needle not in s: raise SystemExit("MainActivity intent filter not found")
           p.write_text(s.replace(needle,deep,1))
           PY
+      - name: Keep NeveRRepeat alive for background RR
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("android/app/src/main/AndroidManifest.xml")
+          s=p.read_text()
+          s=s.replace('<uses-permission android:name="android.permission.INTERNET" />','<uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.WAKE_LOCK" />')
+          p.write_text(s)
+          PY
+          cat > android/app/src/main/java/com/neverrepeat/app/MainActivity.java <<'JAVA'
+          package com.neverrepeat.app;
+          import android.os.Bundle;
+          import android.view.WindowManager;
+          import com.getcapacitor.BridgeActivity;
+          public class MainActivity extends BridgeActivity {
+            @Override public void onCreate(Bundle savedInstanceState) {
+              super.onCreate(savedInstanceState);
+              getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            }
+          }
+          JAVA
       - name: Build release APK
         run: cd android && ./gradlew assembleRelease
       - name: Restore permanent NeveRRepeat signing key
