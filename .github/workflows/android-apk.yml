@@ -73,7 +73,7 @@ jobs:
               live=this;
               ContextCompat.startForegroundService(this,new Intent(this,RRBackgroundService.class));
             }
-            @Override protected void onDestroy(){ if(live==this) live=null; super.onDestroy(); }
+            @Override public void onDestroy(){ if(live==this) live=null; super.onDestroy(); }
             public static void rrPulse(){
               MainActivity a=live;
               if(a==null||a.bridge==null||a.bridge.getWebView()==null)return;
