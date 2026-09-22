@@ -53,14 +53,10 @@ jobs:
           p=Path("android/app/src/main/AndroidManifest.xml")
           s=p.read_text()
           anchor='<uses-permission android:name="android.permission.INTERNET" />'
-          perms='''<uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />'''
+          perms='<uses-permission android:name="android.permission.INTERNET" />\\n    <uses-permission android:name="android.permission.WAKE_LOCK" />\\n    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />\\n    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />'
           if anchor in s: s=s.replace(anchor,perms,1)
           app='</application>'
-          service='''        <service android:name=".RRBackgroundService" android:exported="false" android:foregroundServiceType="mediaPlayback" />
-    </application>'''
+          service='        <service android:name=".RRBackgroundService" android:exported="false" android:foregroundServiceType="mediaPlayback" />\\n    </application>'
           if 'RRBackgroundService' not in s: s=s.replace(app,service,1)
           p.write_text(s)
           PY
