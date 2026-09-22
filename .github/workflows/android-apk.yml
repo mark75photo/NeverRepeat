@@ -55,8 +55,8 @@ jobs:
           s=s.replace('<uses-permission android:name="android.permission.INTERNET" />','<uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.WAKE_LOCK" />')
           p.write_text(s)
           PY
-          cat > android/app/src/main/java/com/neverrepeat/app/MainActivity.java <<'JAVA'
-          package com.neverrepeat.app;
+          cat > android/app/src/main/java/com/markhansen/neverrepeat/MainActivity.java <<'JAVA'
+          package com.markhansen.neverrepeat;
           import android.os.Bundle;
           import android.view.WindowManager;
           import com.getcapacitor.BridgeActivity;
