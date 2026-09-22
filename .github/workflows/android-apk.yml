@@ -81,7 +81,7 @@ jobs:
             public static void rrPulse(){
               MainActivity a=live;
               if(a==null||a.bridge==null||a.bridge.getWebView()==null)return;
-              a.bridge.getWebView().post(()->a.bridge.getWebView().evaluateJavascript("if(typeof pollPlayback==='function'){pollPlayback()}\",null));
+              a.bridge.getWebView().post(()->a.bridge.getWebView().evaluateJavascript("if(typeof pollPlayback==='function'){pollPlayback()}",null));
             }
           }
           JAVA
