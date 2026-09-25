@@ -1,1 +1,3 @@
-NeveRRepeat update build: metadata-driven genres + genre-run scheduler
+NeveRRepeat ECU logger build trigger
+commit: 11c3dd6059004397dc43adb17245884964797d18
+purpose: full playback/discovery/UI black-box diagnostics
