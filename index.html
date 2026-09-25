@@ -95,7 +95,7 @@ async function fillDiscoveryPool(seed){
     if(g&&!["Other","Unsorted","Local Files"].includes(g))qs.push(g);
     if(artist)qs.push(artist);
     for(let q of qs){
-      try{let j=await api("/search?type=track&limit=50&q="+encodeURIComponent(q));
+      try{let j=await api("/search?type=track&limit=10&q="+encodeURIComponent(q));
         for(let t of (j.tracks?.items||[])){
           if(!t?.id||!t?.uri||tracks.some(x=>x.id===t.id)||blocked.includes(t.id)||found.some(x=>x.id===t.id))continue;
           let y=parseInt((t.album?.release_date||"").slice(0,4))||null;
