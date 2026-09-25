@@ -86,7 +86,8 @@ jobs:
             void appendEvent(android.content.SharedPreferences p,String type,JSONObject data){try{JSONArray a=new JSONArray(p.getString("nativeLog","[]"));JSONObject r=new JSONObject();r.put("at",System.currentTimeMillis());r.put("event",type);r.put("data",data);a.put(r);while(a.length()>1000)a.remove(0);p.edit().putString("nativeLog",a.toString()).apply();}catch(Exception e){}}
             @Override public int onStartCommand(Intent i,int f,int id){return START_STICKY;} @Override public void onDestroy(){h.removeCallbacks(pulse);if(lock!=null&&lock.isHeld())lock.release();super.onDestroy();} @Override public IBinder onBind(Intent i){return null;}
           }
-          JAVA      - name: Build release APK
+          JAVA
+      - name: Build release APK
         run: cd android && ./gradlew assembleRelease
       - name: Restore permanent NeveRRepeat signing key
         env:
