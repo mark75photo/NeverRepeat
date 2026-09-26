@@ -1,3 +1,4 @@
 NeveRRepeat ECU logger build trigger
 commit: 11c3dd6059004397dc43adb17245884964797d18
 purpose: full playback/discovery/UI black-box diagnostics
+rotation-fix-build: 2026-09-25-1809
