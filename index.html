@@ -116,22 +116,16 @@ async function syncLikes(){
     let liked=await pagedSpotify("/me/tracks?limit=50",j=>(j.items||[]).map(x=>spotifyTrackRow(x.track,oldGenres,true,"liked")).filter(Boolean));
     let all=[...liked],albumCount=0,playlistCount=0;
     if(spotifyLibraryMode==="full"){
-      if($("spotifySourceStatus"))$("spotifySourceStatus").textContent="Loading saved albums + playlists…";
-      let albumRows=await pagedSpotify("/me/albums?limit=50",j=>(j.items||[]).map(x=>x.album).filter(Boolean));
-      for(let album of albumRows){
-        let rows=await pagedSpotify("/albums/"+encodeURIComponent(album.id)+"/tracks?limit=50",j=>(j.items||[]));
-        for(let t of rows){
-          t.album=t.album||album;
-          let row=spotifyTrackRow(t,oldGenres,false,"album");
-          if(row){all.push(row);albumCount++}
-        }
-      }
+      if($("spotifySourceStatus"))$("spotifySourceStatus").textContent="Loading your owned playlists…";
+      let me=await api("/me"),mySpotifyId=me?.id||"";
       let playlists=await pagedSpotify("/me/playlists?limit=50",j=>(j.items||[]).filter(Boolean));
-      for(let p of playlists){
+      let ownedPlaylists=playlists.filter(p=>mySpotifyId&&p.owner?.id===mySpotifyId);
+      for(let p of ownedPlaylists){
         try{
-          let rows=await pagedSpotify("/playlists/"+encodeURIComponent(p.id)+"/tracks?limit=50",j=>(j.items||[]).map(x=>x.track).filter(Boolean));
-          for(let t of rows){let row=spotifyTrackRow(t,oldGenres,false,"playlist");if(row){all.push(row);playlistCount++}}
-        }catch(pe){dlog("SPOTIFY_ERROR",{phase:"playlist_import",playlist:p.name||p.id,message:String(pe.message||pe)})}
+          let rows=await pagedSpotify("/playlists/"+encodeURIComponent(p.id)+"/items?limit=50",j=>(j.items||[]).map(x=>x.item).filter(t=>t&&t.type==="track"&&!t.is_local));
+          for(let t of rows){let row=spotifyTrackRow(t,oldGenres,false,"owned_playlist");if(row){all.push(row);playlistCount++}}
+        }catch(pe){dlog("SPOTIFY_ERROR",{phase:"owned_playlist_import",playlist:p.name||p.id,message:String(pe.message||pe)})}
+      }
       }
     }
     let merged=new Map();
@@ -145,7 +139,7 @@ async function syncLikes(){
     for(let t of tracks){let old=db[t.id]||{};db[t.id]={...old,...t,recordingKey:recordingKey(t),playCount:old.playCount||0,lastPlayedAt:old.lastPlayedAt||null}}
     S.set("trackLedger",db);S.set("lastLibrarySync",Date.now());
     dlog("LIBRARY_SYNC",{mode:spotifyLibraryMode,before,after:tracks.length,liked:liked.length,albumTracks:albumCount,playlistTracks:playlistCount,added:Math.max(0,tracks.length-before),removed:Math.max(0,before-tracks.length),nextAutoSync:new Date(Date.now()+86400000).toISOString()});
-    if($("spotifySourceStatus"))$("spotifySourceStatus").textContent=spotifyLibraryMode==="full"?"Full Library · "+tracks.filter(t=>!t.local).length+" unique Spotify tracks":"Liked Songs · "+liked.length+" tracks";
+    if($("spotifySourceStatus"))$("spotifySourceStatus").textContent=spotifyLibraryMode==="full"?"Liked + My Playlists · "+tracks.filter(t=>!t.local).length+" unique Spotify tracks":"Liked Songs · "+liked.length+" tracks";
     fillFilters();buildQueue();save();render();
     let needsGenre=tracks.filter(t=>["Unsorted","Other"].includes(genreOf(t))).length;
     if(needsGenre){try{await genreBrain()}catch(g){console.warn("Genre Brain unavailable:",g)}}
