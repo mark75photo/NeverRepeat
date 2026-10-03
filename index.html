@@ -126,7 +126,6 @@ async function syncLikes(){
           for(let t of rows){let row=spotifyTrackRow(t,oldGenres,false,"owned_playlist");if(row){all.push(row);playlistCount++}}
         }catch(pe){dlog("SPOTIFY_ERROR",{phase:"owned_playlist_import",playlist:p.name||p.id,message:String(pe.message||pe)})}
       }
-      }
     }
     let merged=new Map();
     for(let t of all){
