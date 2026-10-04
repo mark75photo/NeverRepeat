@@ -161,11 +161,9 @@ async function cleanSelectedDuplicates(){
   // Preserve RR Top Tracks. If a Top Track was a playlist-copy ID with a different
   // Liked keeper ID, transfer the star to the keeper rather than losing it.
   if(successfulRows.length){
-    let topSet=new Set(topTracks);
-    for(let d of successfulRows){
-      if(topSet.has(d.trackId)&&d.keeperId&&d.keeperId!==d.trackId){topSet.delete(d.trackId);topSet.add(d.keeperId)}
-    }
-    topTracks=[...topSet];S.set("topTracks",topTracks);
+    let keeperMap=new Map(successfulRows.filter(d=>d.keeperId&&d.keeperId!==d.trackId).map(d=>[d.trackId,d.keeperId])),seenTop=new Set();
+    topTracks=topTracks.map(id=>keeperMap.get(id)||id).filter(id=>{if(seenTop.has(id))return false;seenTop.add(id);return true});
+    S.set("topTracks",topTracks);
 
     // Remove only successfully deleted duplicate occurrences from the in-memory review list.
     let removedKeys=new Set(successfulRows.map(d=>d.playlistId+"|"+d.uri));
