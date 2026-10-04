@@ -21,6 +21,16 @@ jobs:
           mkdir -p www
           cp index.html www/index.html
           cp manifest.json www/manifest.json
+      - name: JavaScript syntax check
+        run: |
+          node - <<'NODE'
+          const fs=require('fs');
+          const html=fs.readFileSync('www/index.html','utf8');
+          const m=html.match(/<script>([\s\S]*?)<\/script>/);
+          if(!m) throw new Error('No inline script found');
+          new Function(m[1]);
+          console.log('JavaScript syntax OK');
+          NODE
       - run: npx cap add android
       - run: npx cap sync android
       - name: Add Android media support
