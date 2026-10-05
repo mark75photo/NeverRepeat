@@ -48,6 +48,7 @@ public class RRBackgroundService extends MediaBrowserServiceCompat {
     private long lastGoodPosition = 0;
     private boolean lastPlaying = false;
     private boolean advanceLock = false;
+    private String lastDeviceId = "";
 
     private final Runnable pulse = new Runnable() {
         @Override
@@ -262,7 +263,32 @@ public class RRBackgroundService extends MediaBrowserServiceCompat {
         try {
             JSONObject body = new JSONObject();
             body.put("uris", new JSONArray().put(uri));
-            return spotifyCommand("PUT", "/me/player/play", body.toString());
+            String payload = body.toString();
+
+            if (spotifyCommand("PUT", "/me/player/play", payload)) {
+                return true;
+            }
+
+            if (!lastDeviceId.isEmpty()) {
+                android.content.SharedPreferences prefs = getSharedPreferences("rr", 0);
+                JSONObject retry = new JSONObject();
+                retry.put("device_id", lastDeviceId);
+                retry.put("uri", uri);
+                appendEvent(prefs, "BACKGROUND_PLAY_RETRY_DEVICE", retry);
+
+                String target =
+                    "/me/player/play?device_id="
+                        + URLEncoder.encode(lastDeviceId, "UTF-8");
+
+                if (spotifyCommand("PUT", target, payload)) {
+                    appendEvent(prefs, "BACKGROUND_PLAY_RETRY_SUCCESS", retry);
+                    return true;
+                }
+
+                appendEvent(prefs, "BACKGROUND_PLAY_RETRY_FAILED", retry);
+            }
+
+            return false;
         } catch (Exception e) {
             return false;
         }
@@ -547,6 +573,12 @@ public class RRBackgroundService extends MediaBrowserServiceCompat {
             while ((line = reader.readLine()) != null) response.append(line);
 
             JSONObject player = new JSONObject(response.toString());
+            JSONObject device = player.optJSONObject("device");
+            if (device != null) {
+                String deviceId = device.optString("id", "");
+                if (!deviceId.isEmpty()) lastDeviceId = deviceId;
+            }
+
             JSONObject item = player.optJSONObject("item");
             if (item == null) {
                 recoverNoPlayerState(
