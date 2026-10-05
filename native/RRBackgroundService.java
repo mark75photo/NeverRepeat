@@ -521,7 +521,24 @@ public class RRBackgroundService extends MediaBrowserServiceCompat {
                 }
                 return;
             }
-            if (code != 200) return;
+            if (code == 204) {
+                recoverNoPlayerState(
+                    prefs,
+                    state,
+                    "native_no_player_state_204"
+                );
+                return;
+            }
+            if (code != 200) {
+                try {
+                    JSONObject event = new JSONObject();
+                    event.put("status", code);
+                    event.put("last_id", lastId);
+                    event.put("last_position_ms", lastGoodPosition);
+                    appendEvent(prefs, "BACKGROUND_PLAYER_HTTP_STATE", event);
+                } catch (Exception ignored) {}
+                return;
+            }
 
             BufferedReader reader =
                 new BufferedReader(new InputStreamReader(request.getInputStream()));
@@ -531,7 +548,14 @@ public class RRBackgroundService extends MediaBrowserServiceCompat {
 
             JSONObject player = new JSONObject(response.toString());
             JSONObject item = player.optJSONObject("item");
-            if (item == null) return;
+            if (item == null) {
+                recoverNoPlayerState(
+                    prefs,
+                    state,
+                    "native_no_player_item_200"
+                );
+                return;
+            }
 
             String id = item.optString("id", "");
             long position = player.optLong("progress_ms", 0);
@@ -604,6 +628,55 @@ public class RRBackgroundService extends MediaBrowserServiceCompat {
 
             lastPosition = position;
             lastPlaying = playing;
+        } catch (Exception ignored) {}
+    }
+
+    private void recoverNoPlayerState(
+        android.content.SharedPreferences prefs,
+        JSONObject state,
+        String reason
+    ) {
+        try {
+            long duration =
+                lastTrack == null ? 0 : lastTrack.optLong("duration_ms", 0);
+            boolean nearEnd =
+                duration > 0
+                    && lastGoodPosition >= Math.max(20000, duration - 9000);
+
+            JSONObject event = new JSONObject();
+            event.put("reason", reason);
+            event.put("last_id", lastId);
+            event.put(
+                "last_name",
+                lastTrack == null ? "" : lastTrack.optString("name", "")
+            );
+            event.put("last_position_ms", lastGoodPosition);
+            event.put("duration_ms", duration);
+            event.put("last_playing", lastPlaying);
+            event.put("near_end", nearEnd);
+
+            if (lastPlaying && nearEnd) {
+                JSONObject ended =
+                    lastTrack == null
+                        ? new JSONObject()
+                        : new JSONObject(lastTrack.toString());
+                ended.put("last_position_ms", lastGoodPosition);
+                ended.put("reason", reason);
+
+                appendObserved(prefs, ended);
+                appendEvent(
+                    prefs,
+                    "BACKGROUND_NO_STATE_RECOVERY_ADVANCE",
+                    event
+                );
+                nativeAdvance(prefs, state, reason);
+            } else {
+                appendEvent(
+                    prefs,
+                    "BACKGROUND_NO_STATE_IGNORED",
+                    event
+                );
+            }
         } catch (Exception ignored) {}
     }
 
