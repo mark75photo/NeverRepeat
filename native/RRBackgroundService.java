@@ -619,7 +619,32 @@ public class RRBackgroundService extends MediaBrowserServiceCompat {
             if (queue == null || queue.length() == 0) return;
 
             advanceLock = true;
-            JSONObject next = queue.optJSONObject(0);
+            String stateCurrentId = state.optString("currentId", "");
+            int nextIndex = 0;
+            JSONObject next = null;
+            while (nextIndex < queue.length()) {
+                JSONObject candidate = queue.optJSONObject(nextIndex);
+                String candidateId =
+                    candidate == null ? "" : candidate.optString("id", "");
+                boolean sameAsCurrent =
+                    !candidateId.isEmpty()
+                        && (
+                            candidateId.equals(lastId)
+                                || candidateId.equals(stateCurrentId)
+                        );
+                if (candidate != null && !candidateId.isEmpty() && !sameAsCurrent) {
+                    next = candidate;
+                    break;
+                }
+
+                JSONObject skipped = new JSONObject();
+                skipped.put("reason", reason);
+                skipped.put("candidate_id", candidateId);
+                skipped.put("spotify_current_id", lastId);
+                skipped.put("state_current_id", stateCurrentId);
+                appendEvent(prefs, "BACKGROUND_QUEUE_SELF_SKIP", skipped);
+                nextIndex++;
+            }
             if (next == null) return;
 
             String uri = next.optString("uri", "");
@@ -642,7 +667,7 @@ public class RRBackgroundService extends MediaBrowserServiceCompat {
 
             if (spotifyPlayUri(uri)) {
                 JSONArray newQueue = new JSONArray();
-                for (int i = 1; i < queue.length(); i++) {
+                for (int i = nextIndex + 1; i < queue.length(); i++) {
                     newQueue.put(queue.get(i));
                 }
 
@@ -711,6 +736,12 @@ public class RRBackgroundService extends MediaBrowserServiceCompat {
                     android.content.SharedPreferences prefs =
                         getSharedPreferences("rr", 0);
                     JSONObject state = state(prefs);
+                    try {
+                        JSONObject mediaEvent = new JSONObject();
+                        mediaEvent.put("last_id", lastId);
+                        mediaEvent.put("state_current_id", state.optString("currentId", ""));
+                        appendEvent(prefs, "MEDIA_BUTTON_NEXT_RECEIVED", mediaEvent);
+                    } catch (Exception ignored) {}
                     nativeAdvance(prefs, state, "android_auto_next");
                 } else if ("rr.SYNC".equals(action)) {
                     refreshQueue(state(getSharedPreferences("rr", 0)));
